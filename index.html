@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Dez... Onze... Doze...</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      background: #FFF;
+      height: 100vh;
+    }
+
+    #counter-box {
+      position: relative;
+      background-image: url('bg.png');
+      background-size: cover;
+      width: 800px;
+      height: 800px;
+    }
+
+    #dedao {
+      position: absolute;
+      top: 85px;
+      left: 303px;
+      width: 252px;
+      height: 228px;
+      background: url(dedao.png) no-repeat;
+      transition: transform 0.2s;
+    }
+
+    #dedao.click {
+      transform: translate(0px, 10px);
+    }
+
+    #count {
+	  position: absolute;
+	  top: 386px;
+	  left: 338px;
+	  font-size: 26px;
+	  font-weight: bold;
+	  color: white;
+	  padding: 2px 6px;
+	  border-radius: 4px;
+	  width: 154px;
+	  text-align: center;
+	  transform: translate(0px, 0px) skew(0deg, -4deg);
+	  letter-spacing: .7em;
+    }
+
+    #test-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="counter-box">
+    <div id="dedao"></div>
+    <div id="count">0000</div>
+  </div>
+
+  <!--<button id="test-btn">Testar Clique</button>-->
+
+  <audio id="click-sound" src="click.mp3"></audio>
+
+  <script>
+    const countEl = document.getElementById('count');
+    const dedaoEl = document.getElementById('dedao');
+    const clickSound = document.getElementById('click-sound');
+    const testBtn = document.getElementById('test-btn');
+
+    let currentCount = 0;
+
+    function updateDisplay(count) {
+      countEl.textContent = String(count).padStart(4, '0');
+    }
+
+    function triggerClickEffect() {
+      dedaoEl.classList.add('click');
+      clickSound.play();
+      setTimeout(() => dedaoEl.classList.remove('click'), 200);
+    }
+
+    async function getTotalCommits() {
+      try {
+        const perPage = 1;
+        const response = await fetch(`https://api.github.com/repos/manualdousuario/dez/commits?per_page=${perPage}`);
+        const linkHeader = response.headers.get("Link");
+
+        if (linkHeader) {
+          const lastPageMatch = linkHeader.match(/&page=(\d+)>; rel="last"/);
+          if (lastPageMatch) {
+            return parseInt(lastPageMatch[1], 10);
+          }
+        }
+
+        const data = await response.json();
+        return Array.isArray(data) ? data.length : 0;
+      } catch (error) {
+        console.error("Erro ao buscar commits:", error);
+        return currentCount;
+      }
+    }
+
+    async function checkUpdate() {
+      const newCount = await getTotalCommits();
+      if (newCount !== currentCount) {
+        currentCount = newCount;
+        triggerClickEffect();
+        updateDisplay(currentCount);
+      }
+    }
+
+    (async () => {
+      currentCount = await getTotalCommits();
+      updateDisplay(currentCount);
+      setInterval(checkUpdate, 500000);
+    })();
+
+    testBtn.addEventListener('click', () => {
+      currentCount += 1;
+      updateDisplay(currentCount);
+      triggerClickEffect();
+    });
+  </script>
+</body>
+</html>
